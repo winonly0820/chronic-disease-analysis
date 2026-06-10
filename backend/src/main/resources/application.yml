@@ -1,0 +1,52 @@
+# 服务配置
+server:
+  port: 8080
+
+# Spring配置
+spring:
+  application:
+    name: chronic-disease-analysis
+  # Springfox/Swagger兼容性配置
+  mvc:
+    pathmatch:
+      matching-strategy: ant_path_matcher
+  # 数据源配置
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/chronic-disease-analysis?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
+    username: root
+    password: "0107"
+
+# MyBatis-Plus配置
+mybatis-plus:
+  configuration:
+    # 驼峰命名转换
+    map-underscore-to-camel-case: true
+    # SQL日志输出
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  global-config:
+    db-config:
+      # 主键类型：自增
+      id-type: auto
+  # Mapper XML文件位置
+  mapper-locations: classpath:mapper/*.xml
+
+# Knife4j配置
+knife4j:
+  enable: true
+  openapi:
+    title: 慢性病分析API文档
+    description: 基于公开数据的中国居民慢性病分布分析与可视化接口文档
+    version: 1.0.0
+    group:
+      default:
+        group-name: 慢性病分析
+        api-rule: package
+        api-rule-resources:
+          - com.chronic.controller
+
+# 日志配置
+logging:
+  level:
+    com.chronic: debug
+    com.chronic.mapper: debug
