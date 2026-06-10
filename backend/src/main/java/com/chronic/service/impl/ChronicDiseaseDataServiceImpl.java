@@ -29,7 +29,8 @@ import java.util.stream.Collectors;
  */
 @Service
 @RequiredArgsConstructor
-public class ChronicDiseaseDataServiceImpl extends ServiceImpl<ChronicDiseaseDataMapper, ChronicDiseaseData>
+public class ChronicDiseaseDataServiceImpl
+        extends ServiceImpl<ChronicDiseaseDataMapper, ChronicDiseaseData>
         implements ChronicDiseaseDataService {
 
     private final DiseaseTypeMapper diseaseTypeMapper;
@@ -43,9 +44,12 @@ public class ChronicDiseaseDataServiceImpl extends ServiceImpl<ChronicDiseaseDat
         if (diseaseCode == null || diseaseCode.isEmpty()) {
             return null;
         }
+
         LambdaQueryWrapper<DiseaseType> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(DiseaseType::getDiseaseCode, diseaseCode);
+
         DiseaseType diseaseType = diseaseTypeMapper.selectOne(wrapper);
+
         return diseaseType != null ? diseaseType.getId() : null;
     }
 
@@ -69,23 +73,26 @@ public class ChronicDiseaseDataServiceImpl extends ServiceImpl<ChronicDiseaseDat
         }
 
         wrapper.orderByDesc(ChronicDiseaseData::getCreateTime);
+
         return page(page, wrapper);
     }
 
     @Override
     public List<Map<String, Object>> getPrevalenceByProvince(String diseaseCode, Integer year) {
-        // 1. 查询所有省份
+        // 1. 查询所有省级地区
         LambdaQueryWrapper<Region> regionWrapper = new LambdaQueryWrapper<>();
-        regionWrapper.eq(Region::getRegionLevel, 1); // 省级
+        regionWrapper.eq(Region::getRegionLevel, 1);
+
         List<Region> regions = regionMapper.selectList(regionWrapper);
 
         // 2. 查询时间维度ID
         Long timeId = null;
         if (year != null) {
             TimeDimension timeDimension = timeDimensionMapper.selectOne(
-                new LambdaQueryWrapper<TimeDimension>()
-                    .eq(TimeDimension::getYear, year)
+                    new LambdaQueryWrapper<TimeDimension>()
+                            .eq(TimeDimension::getYear, year)
             );
+
             if (timeDimension != null) {
                 timeId = timeDimension.getId();
             }
@@ -93,26 +100,31 @@ public class ChronicDiseaseDataServiceImpl extends ServiceImpl<ChronicDiseaseDat
 
         // 3. 查询疾病数据
         LambdaQueryWrapper<ChronicDiseaseData> wrapper = new LambdaQueryWrapper<>();
+
         if (diseaseCode != null) {
             Long diseaseId = getDiseaseIdByCode(diseaseCode);
             if (diseaseId != null) {
                 wrapper.eq(ChronicDiseaseData::getDiseaseId, diseaseId);
             }
         }
+
         if (timeId != null) {
             wrapper.eq(ChronicDiseaseData::getTimeId, timeId);
         }
+
         List<ChronicDiseaseData> dataList = list(wrapper);
 
-        // 3. 构建返回结果
+        // 4. 构建返回结果
         List<Map<String, Object>> result = new ArrayList<>();
+
         for (Region region : regions) {
             Map<String, Object> item = new HashMap<>();
+
             item.put("regionName", region.getRegionName());
             item.put("regionCode", region.getRegionCode());
 
-            // 查找该省份的数据
             final Long regionId = region.getId();
+
             dataList.stream()
                     .filter(d -> d.getRegionId().equals(regionId))
                     .findFirst()
@@ -122,7 +134,6 @@ public class ChronicDiseaseDataServiceImpl extends ServiceImpl<ChronicDiseaseDat
                         item.put("mortality", d.getMortalityRate());
                     });
 
-            // 如果没有数据，设置默认值
             if (!item.containsKey("prevalence")) {
                 item.put("prevalence", 0);
                 item.put("incidence", 0);
@@ -135,59 +146,66 @@ public class ChronicDiseaseDataServiceImpl extends ServiceImpl<ChronicDiseaseDat
         return result;
     }
 
+    /**
+     * 获取患病率趋势数据
+     *
+     * 前端需要：
+     * [
+     *   {"year": 2019, "prevalence": 33.8000},
+     *   {"year": 2024, "prevalence": 32.9600}
+     * ]
+     */
     @Override
     public List<Map<String, Object>> getPrevalenceTrend(Long regionId, String diseaseCode) {
-        LambdaQueryWrapper<ChronicDiseaseData> wrapper = new LambdaQueryWrapper<>();
-        if (regionId != null) {
-            wrapper.eq(ChronicDiseaseData::getRegionId, regionId);
-        }
-        if (diseaseCode != null) {
-            Long diseaseId = getDiseaseIdByCode(diseaseCode);
-            if (diseaseId != null) {
-                wrapper.eq(ChronicDiseaseData::getDiseaseId, diseaseId);
-            }
-        }
-        List<ChronicDiseaseData> list = list(wrapper);
-        return list.stream().map(BeanUtil::beanToMap).collect(Collectors.toList());
+        return baseMapper.selectPrevalenceTrend(regionId, diseaseCode);
     }
 
+    /**
+     * 获取各年龄段患病率分布
+     *
+     * 前端需要：
+     * [
+     *   {"ageGroup": "0-17岁", "prevalence": 27.5000},
+     *   {"ageGroup": "18-34岁", "prevalence": 22.3000}
+     * ]
+     */
     @Override
     public List<Map<String, Object>> getPrevalenceByAgeGroup(Long regionId, String diseaseCode, Integer year) {
-        LambdaQueryWrapper<ChronicDiseaseData> wrapper = new LambdaQueryWrapper<>();
-        if (regionId != null) {
-            wrapper.eq(ChronicDiseaseData::getRegionId, regionId);
-        }
-        if (diseaseCode != null) {
-            Long diseaseId = getDiseaseIdByCode(diseaseCode);
-            if (diseaseId != null) {
-                wrapper.eq(ChronicDiseaseData::getDiseaseId, diseaseId);
-            }
-        }
-        List<ChronicDiseaseData> list = list(wrapper);
-        return list.stream().map(BeanUtil::beanToMap).collect(Collectors.toList());
+        return baseMapper.selectPrevalenceByAgeGroup(regionId, diseaseCode, year);
     }
 
     @Override
     public List<Map<String, Object>> getDiseaseComparison(Long regionId, Integer year) {
         LambdaQueryWrapper<ChronicDiseaseData> wrapper = new LambdaQueryWrapper<>();
+
         if (regionId != null) {
             wrapper.eq(ChronicDiseaseData::getRegionId, regionId);
         }
+
         List<ChronicDiseaseData> list = list(wrapper);
-        return list.stream().map(BeanUtil::beanToMap).collect(Collectors.toList());
+
+        return list.stream()
+                .map(BeanUtil::beanToMap)
+                .collect(Collectors.toList());
     }
 
     @Override
     public List<Map<String, Object>> getTop10Prevalence(String diseaseCode, Integer year) {
         LambdaQueryWrapper<ChronicDiseaseData> wrapper = new LambdaQueryWrapper<>();
+
         if (diseaseCode != null) {
             Long diseaseId = getDiseaseIdByCode(diseaseCode);
             if (diseaseId != null) {
                 wrapper.eq(ChronicDiseaseData::getDiseaseId, diseaseId);
             }
         }
+
         wrapper.last("LIMIT 10");
+
         List<ChronicDiseaseData> list = list(wrapper);
-        return list.stream().map(BeanUtil::beanToMap).collect(Collectors.toList());
+
+        return list.stream()
+                .map(BeanUtil::beanToMap)
+                .collect(Collectors.toList());
     }
 }
