@@ -1,6 +1,5 @@
 package com.chronic.service.impl;
 
-import cn.hutool.core.bean.BeanUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -20,7 +19,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 /**
  * 慢性病数据服务实现类
@@ -98,14 +96,17 @@ public class ChronicDiseaseDataServiceImpl
             }
         }
 
-        // 3. 查询疾病数据
+        // 3. 查询疾病ID
+        Long diseaseId = null;
+        if (diseaseCode != null && !diseaseCode.isEmpty()) {
+            diseaseId = getDiseaseIdByCode(diseaseCode);
+        }
+
+        // 4. 查询疾病数据
         LambdaQueryWrapper<ChronicDiseaseData> wrapper = new LambdaQueryWrapper<>();
 
-        if (diseaseCode != null) {
-            Long diseaseId = getDiseaseIdByCode(diseaseCode);
-            if (diseaseId != null) {
-                wrapper.eq(ChronicDiseaseData::getDiseaseId, diseaseId);
-            }
+        if (diseaseId != null) {
+            wrapper.eq(ChronicDiseaseData::getDiseaseId, diseaseId);
         }
 
         if (timeId != null) {
@@ -114,7 +115,7 @@ public class ChronicDiseaseDataServiceImpl
 
         List<ChronicDiseaseData> dataList = list(wrapper);
 
-        // 4. 构建返回结果
+        // 5. 构建返回结果
         List<Map<String, Object>> result = new ArrayList<>();
 
         for (Region region : regions) {
@@ -174,38 +175,33 @@ public class ChronicDiseaseDataServiceImpl
         return baseMapper.selectPrevalenceByAgeGroup(regionId, diseaseCode, year);
     }
 
+    /**
+     * 获取各病种患病率、发病率、死亡率对比
+     *
+     * 返回给前端字段：
+     * diseaseId
+     * diseaseCode
+     * diseaseName
+     * prevalenceRate
+     * incidenceRate
+     * mortalityRate
+     */
     @Override
     public List<Map<String, Object>> getDiseaseComparison(Long regionId, Integer year) {
-        LambdaQueryWrapper<ChronicDiseaseData> wrapper = new LambdaQueryWrapper<>();
-
-        if (regionId != null) {
-            wrapper.eq(ChronicDiseaseData::getRegionId, regionId);
-        }
-
-        List<ChronicDiseaseData> list = list(wrapper);
-
-        return list.stream()
-                .map(BeanUtil::beanToMap)
-                .collect(Collectors.toList());
+        return baseMapper.selectDiseaseComparison(regionId, year);
     }
 
+    /**
+     * 获取全国患病率Top10省份
+     *
+     * 返回给前端字段：
+     * regionId
+     * regionCode
+     * regionName
+     * prevalenceRate
+     */
     @Override
     public List<Map<String, Object>> getTop10Prevalence(String diseaseCode, Integer year) {
-        LambdaQueryWrapper<ChronicDiseaseData> wrapper = new LambdaQueryWrapper<>();
-
-        if (diseaseCode != null) {
-            Long diseaseId = getDiseaseIdByCode(diseaseCode);
-            if (diseaseId != null) {
-                wrapper.eq(ChronicDiseaseData::getDiseaseId, diseaseId);
-            }
-        }
-
-        wrapper.last("LIMIT 10");
-
-        List<ChronicDiseaseData> list = list(wrapper);
-
-        return list.stream()
-                .map(BeanUtil::beanToMap)
-                .collect(Collectors.toList());
+        return baseMapper.selectTop10Prevalence(diseaseCode, year);
     }
 }

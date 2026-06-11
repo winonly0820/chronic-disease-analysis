@@ -62,4 +62,64 @@ public interface ChronicDiseaseDataMapper extends BaseMapper<ChronicDiseaseData>
             @Param("diseaseCode") String diseaseCode,
             @Param("year") Integer year
     );
+
+    /**
+     * 各病种患病率、发病率、死亡率对比
+     *
+     * 前端需要字段：
+     * diseaseName
+     * prevalenceRate
+     * incidenceRate
+     * mortalityRate
+     */
+    @Select({
+            "SELECT",
+            "    dt.id AS diseaseId,",
+            "    dt.disease_code AS diseaseCode,",
+            "    dt.disease_name AS diseaseName,",
+            "    ROUND(AVG(d.prevalence_rate), 2) AS prevalenceRate,",
+            "    ROUND(AVG(d.incidence_rate), 2) AS incidenceRate,",
+            "    ROUND(AVG(d.mortality_rate), 2) AS mortalityRate",
+            "FROM t_chronic_disease_data d",
+            "JOIN t_disease_type dt ON d.disease_id = dt.id",
+            "JOIN t_time t ON d.time_id = t.id",
+            "WHERE d.region_id = #{regionId}",
+            "  AND t.year = #{year}",
+            "GROUP BY dt.id, dt.disease_code, dt.disease_name",
+            "ORDER BY dt.id ASC"
+    })
+    List<Map<String, Object>> selectDiseaseComparison(
+            @Param("regionId") Long regionId,
+            @Param("year") Integer year
+    );
+
+    /**
+     * 获取全国患病率Top10省份
+     *
+     * 前端需要字段：
+     * regionName
+     * prevalenceRate
+     */
+    @Select({
+            "SELECT",
+            "    r.id AS regionId,",
+            "    r.region_code AS regionCode,",
+            "    r.region_name AS regionName,",
+            "    ROUND(AVG(d.prevalence_rate), 2) AS prevalenceRate",
+            "FROM t_chronic_disease_data d",
+            "JOIN t_region r ON d.region_id = r.id",
+            "JOIN t_disease_type dt ON d.disease_id = dt.id",
+            "JOIN t_time t ON d.time_id = t.id",
+            "WHERE dt.disease_code = #{diseaseCode}",
+            "  AND t.year = #{year}",
+            "  AND r.region_level = 1",
+            "  AND d.prevalence_rate IS NOT NULL",
+            "GROUP BY r.id, r.region_code, r.region_name",
+            "ORDER BY prevalenceRate DESC",
+            "LIMIT 10"
+    })
+    List<Map<String, Object>> selectTop10Prevalence(
+            @Param("diseaseCode") String diseaseCode,
+            @Param("year") Integer year
+    );
 }
