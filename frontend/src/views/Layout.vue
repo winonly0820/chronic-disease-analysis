@@ -52,11 +52,11 @@
         </div>
         <div class="header-right">
           <el-dropdown>
-            <span class="user-info">
-              <i class="el-icon-user-solid"></i>
-              管理员
-              <i class="el-icon-arrow-down"></i>
-            </span>
+<!--            <span class="user-info">-->
+<!--              <i class="el-icon-user-solid"></i>-->
+<!--              管理员-->
+<!--              <i class="el-icon-arrow-down"></i>-->
+<!--            </span>-->
             <el-dropdown-menu slot="dropdown">
               <el-dropdown-item>个人中心</el-dropdown-item>
               <el-dropdown-item divided>退出登录</el-dropdown-item>
