@@ -51,28 +51,17 @@ public class ChronicDiseaseDataServiceImpl
         return diseaseType != null ? diseaseType.getId() : null;
     }
 
+    /**
+     * 分页查询慢性病数据
+     *
+     * 注意：
+     * 这里不再使用 MyBatis-Plus 默认的 page(page, wrapper)，
+     * 因为默认分页只能查 t_chronic_disease_data 单表，
+     * 无法返回 regionName、diseaseName、year。
+     */
     @Override
     public Page<ChronicDiseaseData> getPage(Page<ChronicDiseaseData> page, ChronicDiseaseData query) {
-        LambdaQueryWrapper<ChronicDiseaseData> wrapper = new LambdaQueryWrapper<>();
-
-        if (query != null) {
-            if (query.getRegionId() != null) {
-                wrapper.eq(ChronicDiseaseData::getRegionId, query.getRegionId());
-            }
-            if (query.getTimeId() != null) {
-                wrapper.eq(ChronicDiseaseData::getTimeId, query.getTimeId());
-            }
-            if (query.getDiseaseId() != null) {
-                wrapper.eq(ChronicDiseaseData::getDiseaseId, query.getDiseaseId());
-            }
-            if (query.getPopulationId() != null) {
-                wrapper.eq(ChronicDiseaseData::getPopulationId, query.getPopulationId());
-            }
-        }
-
-        wrapper.orderByDesc(ChronicDiseaseData::getCreateTime);
-
-        return page(page, wrapper);
+        return baseMapper.selectPageWithName(page, query);
     }
 
     @Override
@@ -149,12 +138,6 @@ public class ChronicDiseaseDataServiceImpl
 
     /**
      * 获取患病率趋势数据
-     *
-     * 前端需要：
-     * [
-     *   {"year": 2019, "prevalence": 33.8000},
-     *   {"year": 2024, "prevalence": 32.9600}
-     * ]
      */
     @Override
     public List<Map<String, Object>> getPrevalenceTrend(Long regionId, String diseaseCode) {
@@ -163,12 +146,6 @@ public class ChronicDiseaseDataServiceImpl
 
     /**
      * 获取各年龄段患病率分布
-     *
-     * 前端需要：
-     * [
-     *   {"ageGroup": "0-17岁", "prevalence": 27.5000},
-     *   {"ageGroup": "18-34岁", "prevalence": 22.3000}
-     * ]
      */
     @Override
     public List<Map<String, Object>> getPrevalenceByAgeGroup(Long regionId, String diseaseCode, Integer year) {
@@ -177,14 +154,6 @@ public class ChronicDiseaseDataServiceImpl
 
     /**
      * 获取各病种患病率、发病率、死亡率对比
-     *
-     * 返回给前端字段：
-     * diseaseId
-     * diseaseCode
-     * diseaseName
-     * prevalenceRate
-     * incidenceRate
-     * mortalityRate
      */
     @Override
     public List<Map<String, Object>> getDiseaseComparison(Long regionId, Integer year) {
@@ -193,12 +162,6 @@ public class ChronicDiseaseDataServiceImpl
 
     /**
      * 获取全国患病率Top10省份
-     *
-     * 返回给前端字段：
-     * regionId
-     * regionCode
-     * regionName
-     * prevalenceRate
      */
     @Override
     public List<Map<String, Object>> getTop10Prevalence(String diseaseCode, Integer year) {

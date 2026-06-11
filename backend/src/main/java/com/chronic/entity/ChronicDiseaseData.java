@@ -1,6 +1,10 @@
 package com.chronic.entity;
 
-import com.baomidou.mybatisplus.annotation.*;
+import com.baomidou.mybatisplus.annotation.FieldFill;
+import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
+import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 
 import java.io.Serializable;
@@ -74,4 +78,26 @@ public class ChronicDiseaseData implements Serializable {
      */
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createTime;
+
+    /**
+     * 省份名称，非数据库字段
+     */
+    @TableField(exist = false)
+    private String regionName;
+
+    /**
+     * 病种名称，非数据库字段
+     */
+    @TableField(exist = false)
+    private String diseaseName;
+
+    /**
+     * 年份，非数据库字段
+     *
+     * 注意：
+     * 这个字段不是 t_chronic_disease_data 表里的字段，
+     * 是分页查询时 JOIN t_time 查出来的。
+     */
+    @TableField(exist = false)
+    private Integer year;
 }

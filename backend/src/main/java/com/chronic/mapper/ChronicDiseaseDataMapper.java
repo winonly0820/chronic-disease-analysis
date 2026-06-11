@@ -1,6 +1,7 @@
 package com.chronic.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.chronic.entity.ChronicDiseaseData;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -16,6 +17,51 @@ import java.util.Map;
  */
 @Mapper
 public interface ChronicDiseaseDataMapper extends BaseMapper<ChronicDiseaseData> {
+
+    /**
+     * 分页查询慢性病数据，并关联省份、病种、年份名称
+     */
+    @Select({
+            "<script>",
+            "SELECT",
+            "    d.id AS id,",
+            "    d.region_id AS regionId,",
+            "    d.time_id AS timeId,",
+            "    d.disease_id AS diseaseId,",
+            "    d.population_id AS populationId,",
+            "    d.prevalence_rate AS prevalenceRate,",
+            "    d.incidence_rate AS incidenceRate,",
+            "    d.mortality_rate AS mortalityRate,",
+            "    d.sample_size AS sampleSize,",
+            "    d.data_source AS dataSource,",
+            "    d.create_time AS createTime,",
+            "    r.region_name AS regionName,",
+            "    dt.disease_name AS diseaseName,",
+            "    t.year AS year",
+            "FROM t_chronic_disease_data d",
+            "LEFT JOIN t_region r ON d.region_id = r.id",
+            "LEFT JOIN t_disease_type dt ON d.disease_id = dt.id",
+            "LEFT JOIN t_time t ON d.time_id = t.id",
+            "WHERE 1 = 1",
+            "<if test='query != null and query.regionId != null'>",
+            "    AND d.region_id = #{query.regionId}",
+            "</if>",
+            "<if test='query != null and query.year != null'>",
+            "    AND t.year = #{query.year}",
+            "</if>",
+            "<if test='query != null and query.diseaseId != null'>",
+            "    AND d.disease_id = #{query.diseaseId}",
+            "</if>",
+            "<if test='query != null and query.populationId != null'>",
+            "    AND d.population_id = #{query.populationId}",
+            "</if>",
+            "ORDER BY d.create_time DESC",
+            "</script>"
+    })
+    Page<ChronicDiseaseData> selectPageWithName(
+            Page<ChronicDiseaseData> page,
+            @Param("query") ChronicDiseaseData query
+    );
 
     /**
      * 查询某省份某病种的患病率年度趋势
@@ -65,12 +111,6 @@ public interface ChronicDiseaseDataMapper extends BaseMapper<ChronicDiseaseData>
 
     /**
      * 各病种患病率、发病率、死亡率对比
-     *
-     * 前端需要字段：
-     * diseaseName
-     * prevalenceRate
-     * incidenceRate
-     * mortalityRate
      */
     @Select({
             "SELECT",
@@ -85,6 +125,7 @@ public interface ChronicDiseaseDataMapper extends BaseMapper<ChronicDiseaseData>
             "JOIN t_time t ON d.time_id = t.id",
             "WHERE d.region_id = #{regionId}",
             "  AND t.year = #{year}",
+            "  AND d.prevalence_rate IS NOT NULL",
             "GROUP BY dt.id, dt.disease_code, dt.disease_name",
             "ORDER BY dt.id ASC"
     })
@@ -95,10 +136,6 @@ public interface ChronicDiseaseDataMapper extends BaseMapper<ChronicDiseaseData>
 
     /**
      * 获取全国患病率Top10省份
-     *
-     * 前端需要字段：
-     * regionName
-     * prevalenceRate
      */
     @Select({
             "SELECT",
