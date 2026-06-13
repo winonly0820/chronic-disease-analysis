@@ -50,7 +50,7 @@
           ></i>
           <span class="page-title">{{ $route.meta.title }}</span>
         </div>
-        <div class="header-right">
+        <div cl2321211418ass="header-right">
           <el-dropdown>
 <!--            <span class="user-info">-->
 <!--              <i class="el-icon-user-solid"></i>-->
